@@ -10,24 +10,41 @@ class ClassroomUi extends StatelessWidget {
     return Scaffold(
       body: const SingleChildScrollView(
         padding: EdgeInsets.symmetric(vertical: 76, horizontal: 24),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: ClassroomTitle(),
-                )
-              ],
-            ),
-            ClassroomCard(
-              title: "Roberto Carlos",
-              description: "O rei",
-              imageUrl:
-                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREcjtS8Z3cmP9WwhBu5ACe5Ac81uXno35tIQ&s",
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: ClassroomTitle(),
+                  )
+                ],
+              ),
+              ClassroomCard(
+                title: "Programação Web",
+                description:
+                    "Aprenda os princípios da programação web, incluindo HTML, CSS e JavaScript, para desenvolver aplicações interativas.",
+                imageUrl:
+                    "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
+              ),
+              ClassroomCard(
+                title: "Banco de Dados",
+                description:
+                    "Explore os conceitos de bancos de dados, modelagem de dados e SQL para gerenciar informações de forma eficaz.",
+                imageUrl:
+                    "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
+              ),
+              ClassroomCard(
+                title: "Desenvolvimento Mobile",
+                description:
+                    "Descubra as técnicas para desenvolver aplicativos móveis, incluindo design responsivo e integração com APIs.",
+                imageUrl:
+                    "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
+              ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(

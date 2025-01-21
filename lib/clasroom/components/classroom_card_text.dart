@@ -26,7 +26,7 @@ class CardText extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               )
             : const TextStyle(
-                fontSize: 14,
+                fontSize: 12,
               ),
       ),
     );

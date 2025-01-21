@@ -13,22 +13,27 @@ class App extends StatelessWidget {
       title: 'Synapse App',
       theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color.fromRGBO(59, 77, 63, 1),
-            primary: Colors.green,
-            secondary: Colors.white,
+            seedColor: const Color.fromRGBO(136, 158, 115, 1),
+            primary: const Color.fromRGBO(136, 158, 115, 1),
+            secondary: const Color.fromRGBO(244, 215, 147, 1),
+            surface: const Color.fromRGBO(255, 246, 218, 1),
+            error: const Color.fromRGBO(169, 74, 74, 1),
+            onPrimary: const Color.fromRGBO(255, 246, 218, 1),
           ),
           textTheme: TextTheme(
             headlineLarge: TextStyle(
                 fontSize: 40,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary),
-            headlineMedium: const TextStyle(
+            headlineMedium: TextStyle(
               fontSize: 28,
-              fontWeight: FontWeight.w100,
+              color: Theme.of(context).colorScheme.onPrimary,
+              fontWeight: FontWeight.bold,
             ),
           ),
           useMaterial3: true,
           fontFamily: GoogleFonts.poppins().fontFamily),
+
       // home: const LoginPage(),
       debugShowCheckedModeBanner: false,
       routes: <String, WidgetBuilder>{

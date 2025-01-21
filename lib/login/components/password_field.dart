@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 class PasswordField extends StatefulWidget {
   final TextEditingController passwordInputController;
+  final String? Function(String?)? passwordValidator;
 
   const PasswordField({
     super.key,
     required this.passwordInputController,
+    this.passwordValidator,
   });
 
   @override
@@ -13,16 +15,14 @@ class PasswordField extends StatefulWidget {
 }
 
 class _PasswordFieldState extends State<PasswordField> {
-  bool hidePassword = false;
+  bool hidePassword = true;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       keyboardType: TextInputType.text,
       obscureText: hidePassword,
-      validator: (input) => input != null && !input.contains("@")
-          ? "Endereço de email inválido"
-          : null,
+      validator: widget.passwordValidator,
       decoration: InputDecoration(
         hintText: "Senha",
         prefixIcon:
