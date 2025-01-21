@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:synapse/clasroom/pages/classroom_page.dart';
 import 'package:synapse/login/pages/login_page.dart';
+import 'package:synapse/login/pages/register_page.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -38,7 +39,8 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routes: <String, WidgetBuilder>{
         "/": (BuildContext context) => const LoginPage(),
-        "/classes": (BuildContext context) => const ClassroomPage()
+        "/classes": (BuildContext context) => const ClassroomPage(),
+        "/register": (BuildContext context) => const RegisterPage()
       },
     );
   }

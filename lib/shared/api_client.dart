@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:synapse/shared/schemas/user_login.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:synapse/shared/schemas/user_register.dart';
 
 class ApiClient {
   final BaseOptions clientOptions = BaseOptions(
@@ -13,7 +14,6 @@ class ApiClient {
   late Dio client;
 
   ApiClient() {
-    print(clientOptions.baseUrl);
     client = Dio(clientOptions);
   }
 
@@ -24,7 +24,22 @@ class ApiClient {
 
       Response response = await client.post(loginUrl, data: payload);
 
-      print(response);
+      return response;
+    } on DioException catch (e) {
+      if (e.response != null) {
+        return e.response!;
+      }
+      rethrow; // Relança a exceção caso não haja uma resposta.
+    }
+  }
+
+  Future<Response> register(UserRegister userRegister) async {
+    try {
+      String loginUrl = "/auth/register/";
+      Map<String, dynamic> payload = userRegister.toJson();
+
+      Response response = await client.post(loginUrl, data: payload);
+
       return response;
     } on DioException catch (e) {
       if (e.response != null) {

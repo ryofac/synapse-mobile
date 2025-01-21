@@ -20,37 +20,17 @@ class _LoginContainerState extends State<LoginContainer> {
   final ApiClient apiClient = ApiClient();
   bool isLoading = false;
 
-  String? usernameValidator(String? input) {
-    final usernameRegex = RegExp(r'^[a-zA-Z0-9_.]{3,15}$');
-
-    if (input == null || input.isEmpty) {
-      return 'O nome de usuário não pode estar vazio.';
-    } else if (!usernameRegex.hasMatch(input)) {
-      return 'O nome de usuário deve ter entre 3 e 15 caracteres e pode conter letras, números, underscores e pontos.';
-    }
-    return null;
-  }
-
-  String? passwordValidator(String? input) {
-    if (input == null || input.isEmpty) {
-      return 'A senha não pode estar vazia.';
-    } else if (input.length <= 4) {
-      return 'A senha deve ter mais que 4 caracteres.';
-    }
-    return null;
-  }
-
   void tryLoginUser() async {
     String username = widget.emailController.text;
     String password = widget.passwordController.text;
     UserLogin userLogin = UserLogin(username: username, password: password);
 
-    Response<dynamic> response = await apiClient.login(userLogin);
-
     try {
       setState(() {
         isLoading = true;
       });
+      Response<dynamic> response = await apiClient.login(userLogin);
+
       if (mounted) {
         if (response.statusCode == 200) {
           LoginResponse body = LoginResponse(
@@ -96,8 +76,6 @@ class _LoginContainerState extends State<LoginContainer> {
     return LoginUi(
       passwordInputController: widget.passwordController,
       usernameInputController: widget.emailController,
-      passwordValidator: passwordValidator,
-      usernameValidator: usernameValidator,
       loginHandler: tryLoginUser,
       isLoading: isLoading,
     );
