@@ -64,7 +64,7 @@ class _LoginContainerState extends State<LoginContainer> {
           // Exibe feedback positivo ou navega para outra tela
           Navigator.pushNamed(context, '/classes');
           ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Bem vindo!, $fullNameFromToken")));
+              SnackBar(content: Text("Bem vindo $fullNameFromToken!")));
         } else if (response.statusCode == 401 || response.statusCode == 400) {
           // Exibe mensagem de erro
           ScaffoldMessenger.of(context).showSnackBar(
