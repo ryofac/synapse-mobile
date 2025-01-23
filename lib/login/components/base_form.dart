@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class BaseForm extends StatelessWidget {
   final GlobalKey<FormState> _formKey;
   final String formTitle;
+  final String? description;
   final void Function() submitHandler;
   final List<Widget> fields;
   final Widget? buttonChild;
@@ -14,6 +15,7 @@ class BaseForm extends StatelessWidget {
     required this.fields,
     this.buttonChild,
     required this.formTitle,
+    this.description,
   }) : _formKey = formKey;
 
   @override
@@ -43,20 +45,29 @@ class BaseForm extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
             ),
+            description != null
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      description!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : const SizedBox.shrink(),
             const SizedBox(height: 20),
             Column(
               children: fields,
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              style: ButtonStyle(
-                padding: WidgetStateProperty.all(
-                  const EdgeInsets.all(8.0),
-                ),
-                minimumSize: WidgetStateProperty.all(
-                  const Size(double.infinity, 10),
-                ),
-              ),
+              style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(8.0),
+                  minimumSize: const Size(double.infinity, 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   submitHandler();

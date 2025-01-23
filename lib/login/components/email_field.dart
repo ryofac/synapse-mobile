@@ -20,8 +20,10 @@ class UsernameField extends StatelessWidget {
       inputValidator: usernameValidator,
       keyboardType: TextInputType.emailAddress,
       hintText: hintText ?? "Nome de Usuário",
-      prefixIcon:
-          Icon(Icons.person, color: Theme.of(context).colorScheme.onPrimary),
+      prefixIcon: Icon(
+        Icons.alternate_email,
+        color: Theme.of(context).colorScheme.onPrimary,
+      ),
     );
   }
 }

@@ -18,6 +18,7 @@ class _RegisterContainerState extends State<RegisterContainer> {
   final usernameInputController = TextEditingController();
   final passwordRepeatController = TextEditingController();
   bool? isTeacher = false;
+  bool isLoading = false;
 
   ApiClient client = ApiClient();
 
@@ -45,6 +46,9 @@ class _RegisterContainerState extends State<RegisterContainer> {
     }
 
     try {
+      setState(() {
+        isLoading = true;
+      });
       Response<dynamic> response = await client.register(userRegister);
       if (!mounted) return;
       if (response.statusCode == 200) {
@@ -69,6 +73,10 @@ class _RegisterContainerState extends State<RegisterContainer> {
             content: Text('Cadastro falhou, tente novamente mais tarde')),
       );
       rethrow;
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -83,6 +91,7 @@ class _RegisterContainerState extends State<RegisterContainer> {
       handleIsTeacher: handleIsTeacher,
       isTeacher: isTeacher,
       registerHandler: handleRegister,
+      isLoading: isLoading,
     );
   }
 }

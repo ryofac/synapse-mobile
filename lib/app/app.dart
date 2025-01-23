@@ -37,6 +37,7 @@ class App extends StatelessWidget {
 
       // home: const LoginPage(),
       debugShowCheckedModeBanner: false,
+
       routes: <String, WidgetBuilder>{
         "/": (BuildContext context) => const LoginPage(),
         "/classes": (BuildContext context) => const ClassroomPage(),
