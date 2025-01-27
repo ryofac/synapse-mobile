@@ -1,57 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:synapse/clasroom/components/classroom_card.dart';
-import 'package:synapse/clasroom/components/classroom_title.dart';
+import 'package:synapse/clasroom/ui/tabs/about_tab.dart';
+import 'package:synapse/clasroom/ui/tabs/classroom_list_tab.dart';
 
-class ClassroomUi extends StatelessWidget {
+class ClassroomUi extends StatefulWidget {
   const ClassroomUi({super.key});
 
   @override
+  State<ClassroomUi> createState() => _ClassroomUiState();
+}
+
+class _ClassroomUiState extends State<ClassroomUi>
+    with TickerProviderStateMixin {
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              margin: const EdgeInsets.all(16.0),
-              child: const ClassroomTitle(),
-            ),
-          ),
-          const Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  ClassroomCard(
-                    title: "Programação Web",
-                    description:
-                        "Aprenda os princípios da programação web, incluindo HTML, CSS e JavaScript, para desenvolver aplicações interativas.",
-                    imageUrl:
-                        "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
-                  ),
-                  ClassroomCard(
-                    title: "Banco de Dados",
-                    description:
-                        "Explore os conceitos de bancos de dados, modelagem de dados e SQL para gerenciar informações de forma eficaz.",
-                    imageUrl:
-                        "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
-                  ),
-                  ClassroomCard(
-                    title: "Desenvolvimento Mobile",
-                    description:
-                        "Descubra as técnicas para desenvolver aplicativos móveis, incluindo design responsivo e integração com APIs.",
-                    imageUrl:
-                        "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: const Icon(Icons.add_circle_outline_rounded),
+    return DefaultTabController(
+      initialIndex: 1,
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          // title: const Text("Synapse"),
+          bottom: const TabBar(tabs: [
+            Tab(child: Text("Turmas")),
+            Tab(child: Text("Sobre")),
+          ]),
+        ),
+        body: const TabBarView(
+          children: [
+            ClassroomListTab(),
+            AboutTab(),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {},
+          child: const Icon(Icons.add_circle_outline_rounded),
+        ),
       ),
     );
   }

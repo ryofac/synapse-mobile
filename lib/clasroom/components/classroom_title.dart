@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 
-class ClassroomTitle extends StatelessWidget {
-  const ClassroomTitle({
+class TopicTitle extends StatelessWidget {
+  final String name;
+
+  const TopicTitle({
     super.key,
+    required this.name,
   });
 
   @override
   Widget build(BuildContext context) {
     return Text(
-      "Turmas",
+      name,
       style: TextStyle(
           fontSize: 36,
           color: Theme.of(context).primaryColor,
