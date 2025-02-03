@@ -1,0 +1,1 @@
+class LoginExpired extends Error {}

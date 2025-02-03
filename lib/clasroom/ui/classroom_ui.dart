@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:synapse/clasroom/models/classroom_model.dart';
 import 'package:synapse/clasroom/ui/tabs/about_tab.dart';
 import 'package:synapse/clasroom/ui/tabs/classroom_list_tab.dart';
 
 class ClassroomUi extends StatefulWidget {
-  const ClassroomUi({super.key});
+  final bool classesReady;
+  final List<ClassroomModel> classrooms;
+  final Future Function() onRefreshCallback;
+  const ClassroomUi({
+    super.key,
+    required this.classesReady,
+    required this.classrooms,
+    required this.onRefreshCallback,
+  });
 
   @override
   State<ClassroomUi> createState() => _ClassroomUiState();
@@ -14,7 +23,7 @@ class _ClassroomUiState extends State<ClassroomUi>
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      initialIndex: 1,
+      initialIndex: 0,
       length: 2,
       child: Scaffold(
         appBar: AppBar(
@@ -24,10 +33,14 @@ class _ClassroomUiState extends State<ClassroomUi>
             Tab(child: Text("Sobre")),
           ]),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
-            ClassroomListTab(),
-            AboutTab(),
+            ClassroomListTab(
+              classesReady: widget.classesReady,
+              classrooms: widget.classrooms,
+              onRefreshCallback: widget.onRefreshCallback,
+            ),
+            const AboutTab(),
           ],
         ),
         floatingActionButton: FloatingActionButton(

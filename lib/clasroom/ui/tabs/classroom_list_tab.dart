@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:synapse/clasroom/components/classroom_card.dart';
 import 'package:synapse/clasroom/components/classroom_title.dart';
+import 'package:synapse/clasroom/models/classroom_model.dart';
+import 'package:synapse/shared/components/loading.dart';
 
 class ClassroomListTab extends StatelessWidget {
+  final bool classesReady;
+  final List<ClassroomModel> classrooms;
+
+  final Future Function() onRefreshCallback;
   const ClassroomListTab({
     super.key,
+    required this.classesReady,
+    required this.classrooms,
+    required this.onRefreshCallback,
   });
 
   @override
@@ -20,37 +29,31 @@ class ClassroomListTab extends StatelessWidget {
             ),
           ),
         ),
-        const Expanded(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                ClassroomCard(
-                  title: "Programação Web",
-                  description:
-                      "Aprenda os princípios da programação web, incluindo HTML, CSS e JavaScript, para desenvolver aplicações interativas.",
-                  imageUrl:
-                      "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
+        Expanded(
+          child: !classesReady
+              ? const Loading()
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    await onRefreshCallback();
+                  },
+                  child: ListView.builder(
+                    itemCount: classrooms.length,
+                    itemBuilder: (context, index) {
+                      return ClassroomCard(
+                        imageUrl:
+                            "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
+                        title: classrooms[index].className,
+                        description: classrooms[index].className,
+                      );
+                    },
+                  ),
                 ),
-                ClassroomCard(
-                  title: "Banco de Dados",
-                  description:
-                      "Explore os conceitos de bancos de dados, modelagem de dados e SQL para gerenciar informações de forma eficaz.",
-                  imageUrl:
-                      "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
-                ),
-                ClassroomCard(
-                  title: "Desenvolvimento Mobile",
-                  description:
-                      "Descubra as técnicas para desenvolver aplicativos móveis, incluindo design responsivo e integração com APIs.",
-                  imageUrl:
-                      "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
-                ),
-              ],
-            ),
-          ),
         ),
       ],
     );
   }
 }
+
+
+
+//  

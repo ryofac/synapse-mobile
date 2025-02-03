@@ -1,0 +1,758 @@
+diff --git a/lib/app/app.dart b/lib/app/app.dart
+index e14f36d..dc2e42a 100644
+--- a/lib/app/app.dart
++++ b/lib/app/app.dart
+@@ -39,8 +39,8 @@ class App extends StatelessWidget {
+       debugShowCheckedModeBanner: false,
+ 
+       routes: <String, WidgetBuilder>{
+-        // "/": (BuildContext context) => const LoginPage(),
+-        "/": (BuildContext context) => const ClassroomPage(),
++        "/": (BuildContext context) => const LoginPage(),
++        // "/": (BuildContext context) => const ClassroomPage(),
+         "/classes": (BuildContext context) => const ClassroomPage(),
+         "/register": (BuildContext context) => const RegisterPage()
+       },
+diff --git a/lib/clasroom/containers/classroom_container.dart b/lib/clasroom/containers/classroom_container.dart
+index e5134e8..957de49 100644
+--- a/lib/clasroom/containers/classroom_container.dart
++++ b/lib/clasroom/containers/classroom_container.dart
+@@ -1,4 +1,8 @@
++import 'dart:async';
++
+ import 'package:flutter/material.dart';
++import 'package:synapse/clasroom/models/classroom_model.dart';
++import 'package:synapse/clasroom/repositories/classroom_repository.dart';
+ import 'package:synapse/clasroom/ui/classroom_ui.dart';
+ 
+ class ClassroomContainer extends StatefulWidget {
+@@ -9,8 +13,36 @@ class ClassroomContainer extends StatefulWidget {
+ }
+ 
+ class _ClassroomContainerState extends State<ClassroomContainer> {
++  final ClassroomRepository classRepository = ClassroomRepository();
++  List<ClassroomModel> classrooms = [];
++  bool classesReady = false;
++
++  @override
++  void initState() {
++    super.initState();
++    _populateClassrooms();
++  }
++
++  @override
++  void didChangeDependencies() {
++    super.didChangeDependencies();
++    _populateClassrooms();
++  }
++
++  Future _populateClassrooms() async {
++    var allClassrooms = await classRepository.getAllClassrooms();
++    setState(() {
++      classrooms = List.from(allClassrooms);
++      classesReady = true;
++    });
++  }
++
+   @override
+   Widget build(BuildContext context) {
+-    return const ClassroomUi();
++    return ClassroomUi(
++      classesReady: classesReady,
++      classrooms: classrooms,
++      onRefreshCallback: _populateClassrooms,
++    );
+   }
+ }
+diff --git a/lib/clasroom/models/classroom_model.dart b/lib/clasroom/models/classroom_model.dart
+new file mode 100644
+index 0000000..8bf3719
+--- /dev/null
++++ b/lib/clasroom/models/classroom_model.dart
+@@ -0,0 +1,34 @@
++import 'dart:convert';
++
++ClassroomModel classroomModelFromJson(String str) =>
++    ClassroomModel.fromJson(json.decode(str));
++
++String classroomModelToJson(ClassroomModel data) => json.encode(data.toJson());
++
++class ClassroomModel {
++  int id;
++  String className;
++  String? photoUrl;
++  int teacherId;
++
++  ClassroomModel({
++    required this.id,
++    required this.className,
++    this.photoUrl,
++    required this.teacherId,
++  });
++
++  factory ClassroomModel.fromJson(Map<String, dynamic> json) => ClassroomModel(
++        id: json["id"],
++        className: json["className"],
++        photoUrl: json["photoUrl"],
++        teacherId: json["teacher_id"],
++      );
++
++  Map<String, dynamic> toJson() => {
++        "id": id,
++        "className": className,
++        "photoUrl": photoUrl,
++        "teacher_id": teacherId,
++      };
++}
+diff --git a/lib/clasroom/pages/classroom_page.dart b/lib/clasroom/pages/classroom_page.dart
+index 1413c83..fada867 100644
+--- a/lib/clasroom/pages/classroom_page.dart
++++ b/lib/clasroom/pages/classroom_page.dart
+@@ -6,6 +6,6 @@ class ClassroomPage extends StatelessWidget {
+ 
+   @override
+   Widget build(BuildContext context) {
+-    return const ClassroomContainer();
++    return ClassroomContainer();
+   }
+ }
+diff --git a/lib/clasroom/repositories/classroom_repository.dart b/lib/clasroom/repositories/classroom_repository.dart
+new file mode 100644
+index 0000000..7878aa9
+--- /dev/null
++++ b/lib/clasroom/repositories/classroom_repository.dart
+@@ -0,0 +1,26 @@
++import 'package:dio/dio.dart';
++import 'package:flutter/material.dart';
++import 'package:synapse/clasroom/models/classroom_model.dart';
++import 'package:synapse/login/token_manager.dart';
++import 'package:synapse/shared/repositories/base_api_repository.dart';
++
++class ClassroomRepository extends BaseApiRepository {
++  Future<List<ClassroomModel>> getAllClassrooms() async {
++    String allClassroomsUrl = "/classroom/";
++
++    String authToken = await TokenManager.instance.getAccessToken();
++
++    var response = await client.get(allClassroomsUrl,
++        options: Options(headers: {"Authorization": "Bearer $authToken"}));
++
++    if (response.statusCode != 200) {
++      debugPrint("Erro ao processar todas as classroomns");
++      return List.empty();
++    }
++
++    List<dynamic> listJson = List.from(response.data);
++    return listJson
++        .map((classroomJson) => ClassroomModel.fromJson(classroomJson))
++        .toList();
++  }
++}
+diff --git a/lib/clasroom/ui/classroom_ui.dart b/lib/clasroom/ui/classroom_ui.dart
+index e20421d..92a5b59 100644
+--- a/lib/clasroom/ui/classroom_ui.dart
++++ b/lib/clasroom/ui/classroom_ui.dart
+@@ -1,9 +1,18 @@
+ import 'package:flutter/material.dart';
++import 'package:synapse/clasroom/models/classroom_model.dart';
+ import 'package:synapse/clasroom/ui/tabs/about_tab.dart';
+ import 'package:synapse/clasroom/ui/tabs/classroom_list_tab.dart';
+ 
+ class ClassroomUi extends StatefulWidget {
+-  const ClassroomUi({super.key});
++  final bool classesReady;
++  final List<ClassroomModel> classrooms;
++  final Future Function() onRefreshCallback;
++  const ClassroomUi({
++    super.key,
++    required this.classesReady,
++    required this.classrooms,
++    required this.onRefreshCallback,
++  });
+ 
+   @override
+   State<ClassroomUi> createState() => _ClassroomUiState();
+@@ -14,7 +23,7 @@ class _ClassroomUiState extends State<ClassroomUi>
+   @override
+   Widget build(BuildContext context) {
+     return DefaultTabController(
+-      initialIndex: 1,
++      initialIndex: 0,
+       length: 2,
+       child: Scaffold(
+         appBar: AppBar(
+@@ -24,10 +33,14 @@ class _ClassroomUiState extends State<ClassroomUi>
+             Tab(child: Text("Sobre")),
+           ]),
+         ),
+-        body: const TabBarView(
++        body: TabBarView(
+           children: [
+-            ClassroomListTab(),
+-            AboutTab(),
++            ClassroomListTab(
++              classesReady: widget.classesReady,
++              classrooms: widget.classrooms,
++              onRefreshCallback: widget.onRefreshCallback,
++            ),
++            const AboutTab(),
+           ],
+         ),
+         floatingActionButton: FloatingActionButton(
+diff --git a/lib/clasroom/ui/tabs/classroom_list_tab.dart b/lib/clasroom/ui/tabs/classroom_list_tab.dart
+index 47eaa38..5b1fac3 100644
+--- a/lib/clasroom/ui/tabs/classroom_list_tab.dart
++++ b/lib/clasroom/ui/tabs/classroom_list_tab.dart
+@@ -1,10 +1,19 @@
+ import 'package:flutter/material.dart';
+ import 'package:synapse/clasroom/components/classroom_card.dart';
+ import 'package:synapse/clasroom/components/classroom_title.dart';
++import 'package:synapse/clasroom/models/classroom_model.dart';
++import 'package:synapse/shared/components/loading.dart';
+ 
+ class ClassroomListTab extends StatelessWidget {
++  final bool classesReady;
++  final List<ClassroomModel> classrooms;
++
++  final Future Function() onRefreshCallback;
+   const ClassroomListTab({
+     super.key,
++    required this.classesReady,
++    required this.classrooms,
++    required this.onRefreshCallback,
+   });
+ 
+   @override
+@@ -20,37 +29,31 @@ class ClassroomListTab extends StatelessWidget {
+             ),
+           ),
+         ),
+-        const Expanded(
+-          child: SingleChildScrollView(
+-            padding: EdgeInsets.symmetric(horizontal: 24),
+-            child: Column(
+-              children: [
+-                ClassroomCard(
+-                  title: "Programação Web",
+-                  description:
+-                      "Aprenda os princípios da programação web, incluindo HTML, CSS e JavaScript, para desenvolver aplicações interativas.",
+-                  imageUrl:
+-                      "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
+-                ),
+-                ClassroomCard(
+-                  title: "Banco de Dados",
+-                  description:
+-                      "Explore os conceitos de bancos de dados, modelagem de dados e SQL para gerenciar informações de forma eficaz.",
+-                  imageUrl:
+-                      "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
++        Expanded(
++          child: !classesReady
++              ? const Loading()
++              : RefreshIndicator(
++                  onRefresh: () async {
++                    await onRefreshCallback();
++                  },
++                  child: ListView.builder(
++                    itemCount: classrooms.length,
++                    itemBuilder: (context, index) {
++                      return ClassroomCard(
++                        imageUrl:
++                            "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
++                        title: classrooms[index].className,
++                        description: classrooms[index].className,
++                      );
++                    },
++                  ),
+                 ),
+-                ClassroomCard(
+-                  title: "Desenvolvimento Mobile",
+-                  description:
+-                      "Descubra as técnicas para desenvolver aplicativos móveis, incluindo design responsivo e integração com APIs.",
+-                  imageUrl:
+-                      "https://www.alertasecurity.com.br/wp-content/uploads/2021/11/tecnologia-da-informacao-890x500-1-1.jpg",
+-                ),
+-              ],
+-            ),
+-          ),
+         ),
+       ],
+     );
+   }
+ }
++
++
++
++//  
+\ No newline at end of file
+diff --git a/lib/login/containers/login_container.dart b/lib/login/containers/login_container.dart
+index 90ad7f0..71982af 100644
+--- a/lib/login/containers/login_container.dart
++++ b/lib/login/containers/login_container.dart
+@@ -1,9 +1,11 @@
+-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+ import 'package:dio/dio.dart';
+ import 'package:flutter/material.dart';
++import 'package:synapse/login/models/credentials.dart';
++import 'package:synapse/login/models/user_model.dart';
++import 'package:synapse/login/repositories/user_repository.dart';
++import 'package:synapse/login/token_manager.dart';
+ import 'package:synapse/login/ui/login_ui.dart';
+ import 'package:synapse/shared/api_client.dart';
+-import 'package:synapse/shared/schemas/login_response.dart';
+ import 'package:synapse/shared/schemas/user_login.dart';
+ 
+ class LoginContainer extends StatefulWidget {
+@@ -18,8 +20,18 @@ class LoginContainer extends StatefulWidget {
+ 
+ class _LoginContainerState extends State<LoginContainer> {
+   final ApiClient apiClient = ApiClient();
++  final UserRepository userRepository = UserRepository();
++
+   bool isLoading = false;
+ 
++  void greetUser() async {
++    UserModel currentuser = await userRepository.getLoggerUser();
++
++    var username = currentuser.username;
++    ScaffoldMessenger.of(context)
++        .showSnackBar(SnackBar(content: Text("Bem vindo $username!")));
++  }
++
+   void tryLoginUser() async {
+     String username = widget.emailController.text;
+     String password = widget.passwordController.text;
+@@ -33,18 +45,14 @@ class _LoginContainerState extends State<LoginContainer> {
+ 
+       if (mounted) {
+         if (response.statusCode == 200) {
+-          LoginResponse body = LoginResponse(
++          Credentials credentials = Credentials(
+               authToken: response.data["auth_token"],
+               refreshToken: response.data["refresh_token"]);
++          TokenManager.instance.setToken(credentials);
+ 
+-          final jwtPayload = JWT.decode(body.authToken).payload;
+-          String fullNameFromToken = jwtPayload['fullName'] ?? 'Usuário';
+-
+-          print(jwtPayload);
+           // Exibe feedback positivo ou navega para outra tela
+           Navigator.pushNamed(context, '/classes');
+-          ScaffoldMessenger.of(context).showSnackBar(
+-              SnackBar(content: Text("Bem vindo $fullNameFromToken!")));
++          greetUser();
+         } else if (response.statusCode == 401 || response.statusCode == 400) {
+           // Exibe mensagem de erro
+           ScaffoldMessenger.of(context).showSnackBar(
+diff --git a/lib/login/exceptions/login_expired.dart b/lib/login/exceptions/login_expired.dart
+new file mode 100644
+index 0000000..c7aa92a
+--- /dev/null
++++ b/lib/login/exceptions/login_expired.dart
+@@ -0,0 +1 @@
++class LoginExpired extends Error {}
+diff --git a/lib/login/models/credentials.dart b/lib/login/models/credentials.dart
+new file mode 100644
+index 0000000..849c585
+--- /dev/null
++++ b/lib/login/models/credentials.dart
+@@ -0,0 +1,26 @@
++import 'dart:convert';
++
++Credentials credentialsFromJson(String str) =>
++    Credentials.fromJson(json.decode(str));
++
++String credentialsToJson(Credentials data) => json.encode(data.toJson());
++
++class Credentials {
++  String authToken;
++  String refreshToken;
++
++  Credentials({
++    required this.authToken,
++    required this.refreshToken,
++  });
++
++  factory Credentials.fromJson(Map<String, dynamic> json) => Credentials(
++        authToken: json["auth_token"],
++        refreshToken: json["refresh_token"],
++      );
++
++  Map<String, dynamic> toJson() => {
++        "auth_token": authToken,
++        "refresh_token": refreshToken,
++      };
++}
+diff --git a/lib/login/models/user_model.dart b/lib/login/models/user_model.dart
+new file mode 100644
+index 0000000..b5b5fe4
+--- /dev/null
++++ b/lib/login/models/user_model.dart
+@@ -0,0 +1,41 @@
++import 'dart:convert';
++
++import 'package:synapse/clasroom/models/classroom_model.dart';
++
++UserModel userModelFromJson(String str) => UserModel.fromJson(json.decode(str));
++
++String userModelToJson(UserModel data) => json.encode(data.toJson());
++
++class UserModel {
++  String username;
++  String fullname;
++  String role;
++  int id;
++  List<ClassroomModel> classesJoined;
++
++  UserModel({
++    required this.username,
++    required this.fullname,
++    required this.role,
++    required this.id,
++    required this.classesJoined,
++  });
++
++  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
++        username: json["username"],
++        fullname: json["fullname"],
++        role: json["role"],
++        id: json["id"],
++        classesJoined: List<ClassroomModel>.from(
++            json["classes_joined"].map((x) => ClassroomModel.fromJson(x))),
++      );
++
++  Map<String, dynamic> toJson() => {
++        "username": username,
++        "fullname": fullname,
++        "role": role,
++        "id": id,
++        "classes_joined":
++            List<dynamic>.from(classesJoined.map((x) => x.toJson())),
++      };
++}
+diff --git a/lib/login/repositories/user_repository.dart b/lib/login/repositories/user_repository.dart
+new file mode 100644
+index 0000000..25f6cef
+--- /dev/null
++++ b/lib/login/repositories/user_repository.dart
+@@ -0,0 +1,18 @@
++import 'package:dio/dio.dart';
++import 'package:synapse/login/models/user_model.dart';
++import 'package:synapse/login/token_manager.dart';
++import 'package:synapse/shared/repositories/base_api_repository.dart';
++
++class UserRepository extends BaseApiRepository {
++  Future<UserModel> getLoggerUser() async {
++    String userDetailsUrl = "/users/me/";
++
++    String accessToken = await TokenManager.instance.getAccessToken();
++    var headers = {"Authorization": "Bearer $accessToken"};
++
++    Response response = await super
++        .client
++        .get(userDetailsUrl, options: Options(headers: headers));
++    return UserModel.fromJson(response.data);
++  }
++}
+diff --git a/lib/login/token_manager.dart b/lib/login/token_manager.dart
+new file mode 100644
+index 0000000..8b2c874
+--- /dev/null
++++ b/lib/login/token_manager.dart
+@@ -0,0 +1,70 @@
++import 'dart:async';
++
++import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter_secure_storage/flutter_secure_storage.dart';
++import 'package:synapse/login/exceptions/login_expired.dart';
++import 'package:synapse/login/models/credentials.dart';
++import 'package:synapse/shared/api_client.dart';
++
++class TokenManager {
++  static TokenManager? _instance;
++
++  static TokenManager get instance {
++    _instance ??= TokenManager._();
++    return _instance!;
++  }
++
++  String accessToken = "";
++  String refreshToken = "";
++
++  bool isRefreshing = false;
++  Completer<void>? completer;
++
++  ApiClient apiClient = ApiClient();
++
++  FlutterSecureStorage storage = const FlutterSecureStorage(
++    aOptions: AndroidOptions.defaultOptions,
++  );
++
++  TokenManager._();
++
++  Future<String> getAccessToken() async {
++    if (isTokenExpired() && !isRefreshing) {
++      debugPrint("Token has expired, refreshing access token.");
++      isRefreshing = true;
++      completer = Completer<void>();
++      await renewAccessToken();
++      isRefreshing = false;
++      completer?.complete();
++    }
++    if (isRefreshing) {
++      debugPrint(
++          "Already refreshing access token, waiting for it to complete.");
++      await completer?.future;
++    }
++    return accessToken;
++  }
++
++  bool isTokenExpired() {
++    try {
++      JWT.decode(accessToken);
++      return false;
++    } on JWTExpiredException {
++      return true;
++    }
++  }
++
++  Future<void> renewAccessToken() async {
++    final Credentials? token = await apiClient.refreshToken(refreshToken);
++    if (token == null) {
++      throw LoginExpired();
++    }
++    setToken(token);
++  }
++
++  void setToken(Credentials token) {
++    accessToken = token.authToken;
++    refreshToken = token.refreshToken;
++  }
++}
+diff --git a/lib/shared/api_client.dart b/lib/shared/api_client.dart
+index 2841e46..a366567 100644
+--- a/lib/shared/api_client.dart
++++ b/lib/shared/api_client.dart
+@@ -1,4 +1,5 @@
+ import 'package:dio/dio.dart';
++import 'package:synapse/login/models/credentials.dart';
+ import 'package:synapse/shared/schemas/user_login.dart';
+ import 'package:flutter_dotenv/flutter_dotenv.dart';
+ import 'package:synapse/shared/schemas/user_register.dart';
+@@ -48,4 +49,20 @@ class ApiClient {
+       rethrow; // Relança a exceção caso não haja uma resposta.
+     }
+   }
++
++  Future<Credentials?> refreshToken(String refreshToken) async {
++    try {
++      String refreshUrl = "/auth/refresh";
++      Response response =
++          await client.post(refreshUrl, data: {"refresh_token": refreshToken});
++
++      if (response.statusCode != 200) {
++        return null;
++      }
++      var json = response.data;
++      return credentialsFromJson(json.toString());
++    } on DioException {
++      return null;
++    }
++  }
+ }
+diff --git a/lib/shared/repositories/base_api_repository.dart b/lib/shared/repositories/base_api_repository.dart
+new file mode 100644
+index 0000000..722ece6
+--- /dev/null
++++ b/lib/shared/repositories/base_api_repository.dart
+@@ -0,0 +1,18 @@
++import 'package:dio/dio.dart';
++import 'package:flutter_dotenv/flutter_dotenv.dart';
++
++class BaseApiRepository {
++  // Fornece o básico pra realizar o acesso à api via client
++  final BaseOptions clientOptions = BaseOptions(
++    baseUrl: dotenv.env["API_BASE_URL"] ?? "http://localhost:3000/",
++    connectTimeout: Duration(
++        seconds:
++            int.parse(dotenv.env["API_CONNECTION_TIMEOUT_SECONDS"] ?? "60")),
++  );
++
++  late Dio client;
++
++  BaseApiRepository() {
++    client = Dio(clientOptions);
++  }
++}
+diff --git a/linux/flutter/generated_plugin_registrant.cc b/linux/flutter/generated_plugin_registrant.cc
+index e71a16d..d0e7f79 100644
+--- a/linux/flutter/generated_plugin_registrant.cc
++++ b/linux/flutter/generated_plugin_registrant.cc
+@@ -6,6 +6,10 @@
+ 
+ #include "generated_plugin_registrant.h"
+ 
++#include <flutter_secure_storage_linux/flutter_secure_storage_linux_plugin.h>
+ 
+ void fl_register_plugins(FlPluginRegistry* registry) {
++  g_autoptr(FlPluginRegistrar) flutter_secure_storage_linux_registrar =
++      fl_plugin_registry_get_registrar_for_plugin(registry, "FlutterSecureStorageLinuxPlugin");
++  flutter_secure_storage_linux_plugin_register_with_registrar(flutter_secure_storage_linux_registrar);
+ }
+diff --git a/linux/flutter/generated_plugins.cmake b/linux/flutter/generated_plugins.cmake
+index 2e1de87..b29e9ba 100644
+--- a/linux/flutter/generated_plugins.cmake
++++ b/linux/flutter/generated_plugins.cmake
+@@ -3,6 +3,7 @@
+ #
+ 
+ list(APPEND FLUTTER_PLUGIN_LIST
++  flutter_secure_storage_linux
+ )
+ 
+ list(APPEND FLUTTER_FFI_PLUGIN_LIST
+diff --git a/macos/Flutter/GeneratedPluginRegistrant.swift b/macos/Flutter/GeneratedPluginRegistrant.swift
+index 32aadf6..bf2f8b6 100644
+--- a/macos/Flutter/GeneratedPluginRegistrant.swift
++++ b/macos/Flutter/GeneratedPluginRegistrant.swift
+@@ -5,10 +5,12 @@
+ import FlutterMacOS
+ import Foundation
+ 
++import flutter_secure_storage_macos
+ import geolocator_apple
+ import path_provider_foundation
+ 
+ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
++  FlutterSecureStoragePlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStoragePlugin"))
+   GeolocatorPlugin.register(with: registry.registrar(forPlugin: "GeolocatorPlugin"))
+   PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))
+ }
+diff --git a/pubspec.lock b/pubspec.lock
+index 2412bf4..26f3099 100644
+--- a/pubspec.lock
++++ b/pubspec.lock
+@@ -166,6 +166,54 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.0.24"
++  flutter_secure_storage:
++    dependency: "direct main"
++    description:
++      name: flutter_secure_storage
++      sha256: "9cad52d75ebc511adfae3d447d5d13da15a55a92c9410e50f67335b6d21d16ea"
++      url: "https://pub.dev"
++    source: hosted
++    version: "9.2.4"
++  flutter_secure_storage_linux:
++    dependency: transitive
++    description:
++      name: flutter_secure_storage_linux
++      sha256: bf7404619d7ab5c0a1151d7c4e802edad8f33535abfbeff2f9e1fe1274e2d705
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.2.2"
++  flutter_secure_storage_macos:
++    dependency: transitive
++    description:
++      name: flutter_secure_storage_macos
++      sha256: "6c0a2795a2d1de26ae202a0d78527d163f4acbb11cde4c75c670f3a0fc064247"
++      url: "https://pub.dev"
++    source: hosted
++    version: "3.1.3"
++  flutter_secure_storage_platform_interface:
++    dependency: transitive
++    description:
++      name: flutter_secure_storage_platform_interface
++      sha256: cf91ad32ce5adef6fba4d736a542baca9daf3beac4db2d04be350b87f69ac4a8
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.1.2"
++  flutter_secure_storage_web:
++    dependency: transitive
++    description:
++      name: flutter_secure_storage_web
++      sha256: f4ebff989b4f07b2656fb16b47852c0aab9fed9b4ec1c70103368337bc1886a9
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.2.1"
++  flutter_secure_storage_windows:
++    dependency: transitive
++    description:
++      name: flutter_secure_storage_windows
++      sha256: b20b07cb5ed4ed74fc567b78a72936203f587eba460af1df11281c9326cd3709
++      url: "https://pub.dev"
++    source: hosted
++    version: "3.1.2"
+   flutter_test:
+     dependency: "direct dev"
+     description: flutter
+@@ -308,10 +356,10 @@ packages:
+     dependency: transitive
+     description:
+       name: js
+-      sha256: c1b2e9b5ea78c45e1a0788d29606ba27dc5f71f019f32ca5140f61ef071838cf
++      sha256: f2c445dce49627136094980615a031419f7f3eb393237e4ecd97ac15dea343f3
+       url: "https://pub.dev"
+     source: hosted
+-    version: "0.7.1"
++    version: "0.6.7"
+   leak_tracker:
+     dependency: transitive
+     description:
+@@ -565,6 +613,14 @@ packages:
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.1.0"
++  win32:
++    dependency: transitive
++    description:
++      name: win32
++      sha256: daf97c9d80197ed7b619040e86c8ab9a9dad285e7671ee7390f9180cc828a51e
++      url: "https://pub.dev"
++    source: hosted
++    version: "5.10.1"
+   xdg_directories:
+     dependency: transitive
+     description:
+diff --git a/pubspec.yaml b/pubspec.yaml
+index a9d5dc4..43d67ad 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -37,6 +37,7 @@ dependencies:
+   dart_jsonwebtoken: ^2.15.0
+   geolocator: ^9.0.2
+   google_maps_flutter: ^2.10.0
++  flutter_secure_storage: ^9.2.4 
+ 
+   # The following adds the Cupertino Icons font to your application.
+   # Use with the CupertinoIcons class for iOS style icons.
+diff --git a/windows/flutter/generated_plugin_registrant.cc b/windows/flutter/generated_plugin_registrant.cc
+index 1ece8f2..a7bdd4b 100644
+--- a/windows/flutter/generated_plugin_registrant.cc
++++ b/windows/flutter/generated_plugin_registrant.cc
+@@ -6,9 +6,12 @@
+ 
+ #include "generated_plugin_registrant.h"
+ 
++#include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
+ #include <geolocator_windows/geolocator_windows.h>
+ 
+ void RegisterPlugins(flutter::PluginRegistry* registry) {
++  FlutterSecureStorageWindowsPluginRegisterWithRegistrar(
++      registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
+   GeolocatorWindowsRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("GeolocatorWindows"));
+ }
+diff --git a/windows/flutter/generated_plugins.cmake b/windows/flutter/generated_plugins.cmake
+index 7f101a7..16cb241 100644
+--- a/windows/flutter/generated_plugins.cmake
++++ b/windows/flutter/generated_plugins.cmake
+@@ -3,6 +3,7 @@
+ #
+ 
+ list(APPEND FLUTTER_PLUGIN_LIST
++  flutter_secure_storage_windows
+   geolocator_windows
+ )
+ 

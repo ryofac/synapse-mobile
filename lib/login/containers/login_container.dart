@@ -1,9 +1,11 @@
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:synapse/login/models/credentials.dart';
+import 'package:synapse/login/models/user_model.dart';
+import 'package:synapse/login/repositories/user_repository.dart';
+import 'package:synapse/login/token_manager.dart';
 import 'package:synapse/login/ui/login_ui.dart';
 import 'package:synapse/shared/api_client.dart';
-import 'package:synapse/shared/schemas/login_response.dart';
 import 'package:synapse/shared/schemas/user_login.dart';
 
 class LoginContainer extends StatefulWidget {
@@ -18,7 +20,17 @@ class LoginContainer extends StatefulWidget {
 
 class _LoginContainerState extends State<LoginContainer> {
   final ApiClient apiClient = ApiClient();
+  final UserRepository userRepository = UserRepository();
+
   bool isLoading = false;
+
+  void greetUser() async {
+    UserModel currentuser = await userRepository.getLoggerUser();
+
+    var username = currentuser.username;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text("Bem vindo $username!")));
+  }
 
   void tryLoginUser() async {
     String username = widget.emailController.text;
@@ -33,18 +45,14 @@ class _LoginContainerState extends State<LoginContainer> {
 
       if (mounted) {
         if (response.statusCode == 200) {
-          LoginResponse body = LoginResponse(
+          Credentials credentials = Credentials(
               authToken: response.data["auth_token"],
               refreshToken: response.data["refresh_token"]);
+          TokenManager.instance.setToken(credentials);
 
-          final jwtPayload = JWT.decode(body.authToken).payload;
-          String fullNameFromToken = jwtPayload['fullName'] ?? 'Usuário';
-
-          print(jwtPayload);
           // Exibe feedback positivo ou navega para outra tela
           Navigator.pushNamed(context, '/classes');
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Bem vindo $fullNameFromToken!")));
+          greetUser();
         } else if (response.statusCode == 401 || response.statusCode == 400) {
           // Exibe mensagem de erro
           ScaffoldMessenger.of(context).showSnackBar(

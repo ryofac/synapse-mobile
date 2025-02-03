@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:synapse/login/models/credentials.dart';
 import 'package:synapse/shared/schemas/user_login.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:synapse/shared/schemas/user_register.dart';
@@ -46,6 +47,22 @@ class ApiClient {
         return e.response!;
       }
       rethrow; // Relança a exceção caso não haja uma resposta.
+    }
+  }
+
+  Future<Credentials?> refreshToken(String refreshToken) async {
+    try {
+      String refreshUrl = "/auth/refresh";
+      Response response =
+          await client.post(refreshUrl, data: {"refresh_token": refreshToken});
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+      var json = response.data;
+      return credentialsFromJson(json.toString());
+    } on DioException {
+      return null;
     }
   }
 }
